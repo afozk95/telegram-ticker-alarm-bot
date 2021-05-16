@@ -15,3 +15,4 @@ Telegram ticker alarm bot
 - Dockerize
 - Add market time info to /price and /prices
 - see [link](https://towardsdatascience.com/bring-your-telegram-chatbot-to-the-next-level-c771ec7d31e4)
+- Make database configurable

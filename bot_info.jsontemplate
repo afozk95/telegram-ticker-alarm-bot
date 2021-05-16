@@ -1,6 +1,10 @@
 {
     "name": "[YOUR BOT NAME]",
     "handle": "[YOUR BOT HANDLE]",
+    "github_repo_link": "[YOUR GITHUB REPO LINK]",
     "description": "[YOUR BOT DESCRIPTION]",
-    "token": "[YOUR BOT TOKEN]"
+    "token": "[YOUR BOT TOKEN]",
+    "config": {
+        "mode": "['polling' or 'webhook']"
+    }
 }

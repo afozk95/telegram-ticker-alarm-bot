@@ -1,6 +1,33 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
+import datetime as dt
+import pytz
+import tzlocal
 import requests
 import lxml.html
+from telegram import message
+
+
+def get_current_ticker_info(ticker: str) -> Optional[Dict[str, Any]]:
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?region=US&lang=en-US&includePrePost=false&interval=2m&useYfid=true&range=1d&corsDomain=finance.yahoo.com&.tsrc=finance"
+    try:
+        r = requests.get(url)
+        meta = r.json()["chart"]["result"][0]["meta"]
+        local_time_zone = tzlocal.get_localzone()
+        market_time_zone = pytz.timezone(meta["exchangeTimezoneName"])
+        last_update_datetime = dt.datetime.fromtimestamp(meta["regularMarketTime"], tz=local_time_zone).astimezone(tz=market_time_zone)
+        current_price = meta["regularMarketPrice"]
+        previous_close_price = meta["previousClose"]
+        absolute_price_change = current_price - previous_close_price
+        percentage_price_change = 100 * absolute_price_change / previous_close_price
+        return {
+            "current_price": current_price,
+            "absolute_price_change": absolute_price_change,
+            "percentage_price_change": percentage_price_change,
+            "last_update_datetime": last_update_datetime,
+        }
+    except Exception as e:
+        print(e)
+        return None
 
 
 def get_current_ticker_price_from_yahoo_finance(ticker: str) -> Optional[Dict[str, float]]:

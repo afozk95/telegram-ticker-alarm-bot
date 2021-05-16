@@ -1,5 +1,5 @@
 from __future__ import annotations
-from re import A
+import datetime as dt
 from ticker_alarm import TickerAlarm
 from typing import Any, Dict, List, Optional, Tuple
 from copy import deepcopy
@@ -7,7 +7,7 @@ import prettytable as pt
 from telegram import ParseMode
 from html import escape as html_escape
 import pymongo
-from price import get_current_ticker_price_from_yahoo_finance
+from price import get_current_ticker_info
 
 
 class TickerQuery:
@@ -54,7 +54,7 @@ class TickerQuery:
             return TickerQuery.get_table_reply([query.ticker for query in query_lst], price_dicts, reply_mode), TickerQuery.get_parse_mode(reply_mode)
 
     def run(self, user_id: int, db: pymongo.database.Database) -> Optional[Dict[str, Any]]:
-        price_dict = get_current_ticker_price_from_yahoo_finance(self.ticker)
+        price_dict = get_current_ticker_info(self.ticker)
         db.insert_ticker_query(user_id, self, price_dict)
         return price_dict
         
@@ -63,8 +63,8 @@ class TickerQuery:
         price_dicts = [query.run(user_id, db) for query in query_lst]
         return price_dicts
 
-    def get_ticker_query_message_text(self, current_price: float, absolute_price_change: float, percentage_price_change: float) -> str:
-        return f"{self.ticker.lower()} {current_price} ({absolute_price_change} {percentage_price_change}%)"
+    def get_ticker_query_message_text(self, current_price: float, absolute_price_change: float, percentage_price_change: float, last_update_datetime: dt.datetime) -> str:
+        return f"{self.ticker.lower()} {current_price} ({absolute_price_change} {percentage_price_change}%) @{last_update_datetime}"
 
     def get_ticker_query_price_error_text(self) -> str:
         return f"{self.ticker.lower()}: error occurred"
@@ -79,19 +79,19 @@ class TickerQuery:
 
     @staticmethod
     def get_table_reply(tickers: List[str], price_dicts: List[Optional[Dict[str, Any]]], table_mode: str) -> str:
-        table = pt.PrettyTable(["Ticker", "Price", "Change", "% Change"])
+        table = pt.PrettyTable(["Ticker", "Price", "Change", "% Change", "Last Updated"])
         table.align["Ticker"] = "l"
         table.align["Price"] = "r"
         table.align["Change"] = "r"
         table.align["% Change"] = "r"
-
+        table.align["Last Updated"] = "r"
 
         for ticker, price_dict in zip(tickers, price_dicts):
             if price_dict is None:
-                table.add_row([ticker, "-", "-", "-"])
+                table.add_row([ticker, "-", "-", "-", "-"])
             else:
-                price, abs_change, perc_change = tuple(price_dict[f] for f in ["current_price", "absolute_price_change", "percentage_price_change"])
-                table.add_row([ticker, f"{price:.2f}", f"{abs_change:.3f}", f"{perc_change:.3f}"])
+                price, abs_change, perc_change, last_updated = tuple(price_dict[f] for f in ["current_price", "absolute_price_change", "percentage_price_change", "last_update_datetime"])
+                table.add_row([ticker, f"{price:.2f}", f"{abs_change:.3f}", f"{perc_change:.3f}", f"{last_updated}"])
 
         if table_mode == "HTML":
             return f"<pre>{table}</pre>"

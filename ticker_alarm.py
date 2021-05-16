@@ -5,7 +5,7 @@ from functools import partialmethod
 from copy import deepcopy
 import pymongo
 from telegram.ext import CallbackContext
-from price import get_current_ticker_price_from_yahoo_finance
+from price import get_current_ticker_info
 
 
 class Condition(Enum):
@@ -52,7 +52,7 @@ class TickerAlarm:
         return f"{user_id}-{message_id}"
 
     def check_alarm_condition(self) -> Optional[bool]:
-        price_dict = get_current_ticker_price_from_yahoo_finance(self.ticker)
+        price_dict = get_current_ticker_info(self.ticker)
         if price_dict is not None:
             current_price = price_dict["current_price"]
             if self.condition == Condition.GREATER_THAN:
